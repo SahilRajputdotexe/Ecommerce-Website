@@ -7,10 +7,16 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
+const { hash } = require('crypto');
 
 
 app.use(express.json());
 app.use(cors());
+
+async function hashPassword(password){
+    return  bcrypt.hashSync(password,10);
+}
 
 mongoose.connect('mongodb+srv://Ecomdemo:QWERTYUIOP@cluster0.fhfp17a.mongodb.net/Ecom');
 
@@ -23,7 +29,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({storage:storage});
 
-//Schema
+//Schema Product
 const product= mongoose.model('product',{
     id:{
         type:Number,
@@ -61,7 +67,33 @@ const product= mongoose.model('product',{
 });
 
 
-//API
+//API for user authentication
+
+const users= mongoose.model('users',{
+    name:{
+        type:String,
+        
+    },
+    email:{
+        type:String,
+        required:true,
+        unique:true
+    },
+    password:{
+        type:String,
+        required:true
+    },
+    cart_data:{
+        type:Object
+    },
+    date:{
+        type:Date,
+        default:Date.now
+    }
+})
+
+
+//API for product database
 app.listen(port, (error) => {
     if (error) return console.log(`Error: ${error}`);
     console.log(`Server is running on port ${port}`);
@@ -119,3 +151,63 @@ app.delete('/deleteproduct', async (req, res) => {
     await product.findOneAndDelete({id:req.body.id});
     res.json({success:1, message:"Product deleted successfully"});
 }  );
+
+
+//API for user authentication
+
+app.post('/register', async (req, res) => {
+
+    let user = await users.findOne({email:req.body.email});
+    if(user){
+        return res.status(400).json({success:0, message:"User already exists"});
+    }
+    cart={};
+    for (let i=1; i<=10; i++){
+        cart[i]=0;
+    }
+    const newUser = new users({
+        name:req.body.name,
+        email:req.body.email,
+        password:await hashPassword(req.body.password),
+        cart_data:cart
+    });
+
+    await users.create(newUser);
+
+    const data={
+        user:{
+            id:newUser.id,
+            email:newUser.email,
+            name:newUser.name
+        }
+    }
+
+    const token=jwt.sign(data,'secret_ecom');
+    res.json({success:1, token:token});
+
+});
+
+
+app.post('/login', async (req, res) => {
+    let user= await users.findOne({email:req.body.email});
+
+    if(!user){
+        return res.status(400).json({success:0, message:"User does not exist"});
+    }
+
+    if(bcrypt.compareSync(req.body.password, user.password)){
+        const data={
+            user:{
+                id:user.id,
+                email:user.email,
+                name:user.name
+            }
+        }
+        const token=jwt.sign(data,'secret_ecom');
+        res.json({success:1, token:token});
+    }
+    else{
+        return res.status(400).json({success:0, message:"Invalid password"});
+    }
+
+});

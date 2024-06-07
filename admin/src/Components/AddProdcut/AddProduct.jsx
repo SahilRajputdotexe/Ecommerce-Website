@@ -10,7 +10,34 @@ const AddProduct = () => {
   const imageHandler = (e) => { setImage(e.target.files[0]) };
   const changeHandler = (e) => { setProductDetails({...productDetails,[e.target.name]:e.target.value}) };
   const addproduct = async() => {
-    alert(productDetails.name + ' ' + productDetails.old_price + ' ' + productDetails.new_price + ' ' + productDetails.category + ' ' + image.name);
+    
+    let responseData;
+    let product =productDetails;
+    let formData = new FormData();
+    formData.append('image',image);
+
+    await fetch('http://localhost:4000/upload',{
+      method:'POST',
+      body:formData,
+      headers:{
+        
+      }
+    }).then((resp)=>resp.json()).then((data)=>{responseData = data;}).catch((err)=>{console.log(err)})
+
+    if(responseData.success){
+      product.image=responseData.image_url;
+
+      await fetch('http://localhost:4000/addproduct',{
+        method:'POST',
+       
+        headers:{
+          Accept:"application/json",
+          'Content-Type':'application/json'
+        },
+        body:JSON.stringify(product),
+      }).then((resp)=>resp.json()).then((data)=>data.success?alert("Product Added"):alert("Failed")).catch((err)=>{console.log(err)});
+    }
+
   }
   
   return (

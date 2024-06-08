@@ -22,9 +22,9 @@
 
 .relatedproducts-item{
     display: flex;
-    gap:40px;
+    gap:90px;
     margin-top:50px;
-    margin-left: 40px;
+    margin-left: -50px;
 }
 
  

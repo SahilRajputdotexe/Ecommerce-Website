@@ -153,6 +153,16 @@ app.delete('/deleteproduct', async (req, res) => {
 }  );
 
 
+app.get('/newcollections',async (req,res)=>{
+    let products = await product.find({}).sort({date:-1}).limit(8);
+    res.json({success:1, products:products});
+});
+
+app.get('/popular/:category/:n',async (req,res)=>{
+    let products = await product.find({category:req.params.category}).sort({date:-1}).limit(req.params.n);
+    res.json({success:1, products:products});
+});
+
 //API for user authentication
 
 app.post('/register', async (req, res) => {
@@ -211,3 +221,4 @@ app.post('/login', async (req, res) => {
     }
 
 });
+

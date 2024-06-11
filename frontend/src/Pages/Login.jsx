@@ -19,7 +19,7 @@ const Login = () => {
     }).then((resp)=>resp.json()).then((data)=>{responseData=data}).catch((err)=>{console.log(err)})
 
     if(responseData.success){
-      localStorage.setItem('auth-token',responseData.token);
+      sessionStorage.setItem('auth-token',responseData.token);
       window.location.replace('/');
     }
     else{
@@ -39,7 +39,7 @@ const Login = () => {
     }).then((resp)=>resp.json()).then((data)=>{responseData=data}).catch((err)=>{console.log(err)})
 
     if(responseData.success){
-      localStorage.setItem('auth-token',responseData.token);
+      sessionStorage.setItem('auth-token',responseData.token);
       window.location.replace('/');
       alert('User Created');
     }

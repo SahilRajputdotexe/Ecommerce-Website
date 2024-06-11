@@ -163,6 +163,8 @@ app.get('/popular/:category/:n',async (req,res)=>{
     res.json({success:1, products:products});
 });
 
+
+
 //API for user authentication
 
 app.post('/register', async (req, res) => {
@@ -172,7 +174,7 @@ app.post('/register', async (req, res) => {
         return res.status(400).json({success:0, message:"User already exists"});
     }
     cart={};
-    for (let i=1; i<=10; i++){
+    for (let i=1; i<=300; i++){
         cart[i]=0;
     }
     const newUser = new users({
@@ -220,5 +222,47 @@ app.post('/login', async (req, res) => {
         return res.status(400).json({success:0, message:"Invalid password"});
     }
 
+});
+
+//fetch user
+    const fetchUser = async (req, res,next) => {
+        const token=req.header('auth-token');
+        if(!token){
+            return res.status(401).json({success:0, message:"Access Denied"});
+        }
+        else{
+            try {
+                const data=jwt.verify(token,'secret_ecom');
+                req.user = data.user;
+                console.log(req.user);
+                next();
+            } catch (error) {
+                console.log(error);
+                res.status(401).json({success:0, message:"Invalid Token"});
+            }
+        
+        }
+    }
+//cart data 
+
+app.get('/getcartdata',fetchUser,async (req, res) => {
+    let user= await users.findOne({_id:req.user.id});
+    
+    res.json({success:1, cart_data:user.cart_data});
+});
+
+app.post('/addtocart', fetchUser,async (req, res) => {  
+    console.log(req.user)
+    let user= await users.findOne({_id:req.user.id});
+    user.cart_data[req.body.Itemid]+=1;
+    await users.findOneAndUpdate({_id:req.user.id},{cart_data:user.cart_data});
+    res.json({success:1, message:"Cart updated successfully"});
+});
+
+app.post('/removefromcart', fetchUser,async (req, res) => {
+    let user= await users.findOne({_id:req.user.id});
+    user.cart_data[req.body.Itemid]-=1;
+    await users.findOneAndUpdate({_id:req.user.id},{cart_data:user.cart_data});
+    res.json({success:1, message:"Cart updated successfully"});
 });
 

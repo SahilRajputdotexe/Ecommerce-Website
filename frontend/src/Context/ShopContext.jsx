@@ -15,19 +15,51 @@ const getdefaultcart=()=>{
 const ShopContextProvider = (props) => {
 
 
-    const[all_product,setAllProduct]=useState();
+    const[all_product,setAllProduct]=useState([]);
     const [cartItems, setCartItems] = useState(getdefaultcart());
 
     useEffect(() => {
         fetch('http://localhost:4000/getproducts').then((resp)=>resp.json()).then((data)=>setAllProduct(data.products)).catch((err)=>{console.log(err)});
-    },[])
+        if(sessionStorage.getItem('auth-token')){
+            fetch('http://localhost:4000/getcartdata',{
+                method:'GET',
+                headers:{
+                    Accept:"application/form-data",
+                    "Content-Type":"application/json",
+                    "auth-token":`${sessionStorage.getItem('auth-token')}`
+                }
+            }).then((resp)=>resp.json()).then((data)=>{setCartItems(data.cart_data)}).catch((err)=>{console.log(err)})
+        }
+    },[]);
     
     const addToCart = (id) => {
         setCartItems((prev)=>({...prev,[id]:prev[id]+1}))
+        if (sessionStorage.getItem('auth-token')){    
+            fetch('http://localhost:4000/addtocart',{
+                method:'POST',
+                headers:{
+                    Accept:"application/form-data",
+                    "Content-Type":"application/json",
+                    "auth-token":`${sessionStorage.getItem('auth-token')}`
+                },
+                body:JSON.stringify({"Itemid":id})
+            }).then((resp)=>resp.json()).then((data)=>console.log(data)).catch((err)=>{console.log(err)});
+        }
     }
     
     const removeFromCart = (id) => {
         setCartItems((prev)=>({...prev,[id]:prev[id]-1}))
+        if (sessionStorage.getItem('auth-token')){    
+            fetch('http://localhost:4000/removefromcart',{
+                method:'POST',
+                headers:{
+                    Accept:"application/form-data",
+                    "Content-Type":"application/json",
+                    "auth-token":`${sessionStorage.getItem('auth-token')}`
+                },
+                body:JSON.stringify({"Itemid":id})
+            }).then((resp)=>resp.json()).then((data)=>console.log(data)).catch((err)=>{console.log(err)});
+        }
     }
 
     const getTotalCartAmount = () => {

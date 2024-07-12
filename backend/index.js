@@ -9,6 +9,7 @@ const fs = require('fs');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { hash } = require('crypto');
+const { type } = require('os');
 
 
 app.use(express.json());
@@ -89,6 +90,29 @@ const users= mongoose.model('users',{
     date:{
         type:Date,
         default:Date.now
+    }
+})
+//TODO :implement token schema and setup expiry and revoke and token types access_token and refresh_token
+const tokens = moonngoose.model('tokens',{
+    token:{
+        type:String,
+        required:true
+    },
+    expiry:{
+        type:Date,
+        required:true
+    },
+    isExpired:{
+        type:Boolean,
+        required:true
+    },
+    isRevoked:{
+        type:Boolean,
+        required:true
+    },
+    type:{
+        type:String,
+        required:true
     }
 })
 
@@ -265,4 +289,22 @@ app.post('/removefromcart', fetchUser,async (req, res) => {
     await users.findOneAndUpdate({_id:req.user.id},{cart_data:user.cart_data});
     res.json({success:1, message:"Cart updated successfully"});
 });
+
+//token logic
+
+function generateAccessToken(user){
+    //TODO: implement token logic
+}
+
+function generateRefreshToken(user){
+    //TODO: implement token logic
+}
+
+function isExpired(token){
+    return token.expiry < Date.now();
+}
+
+function isRevoked(token){
+    return token.isRevoked;
+}
 

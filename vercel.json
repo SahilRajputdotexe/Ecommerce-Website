@@ -1,0 +1,41 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "frontend/package.json",
+        "use": "@vercel/react"
+      },
+      {
+        "src": "admin/package.json",
+        "use": "@vercel/react"
+      },
+      {
+        "src": "backend/server.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/(.*)",
+        "dest": "/frontend/$1",
+        "headers": {
+          "host": "frontend-yourproject.vercel.app"
+        }
+      },
+      {
+        "src": "/api/(.*)",
+        "dest": "/backend/$1",
+        "headers": {
+          "host": "api-yourproject.vercel.app"
+        }
+      },
+      {
+        "src": "/admin/(.*)",
+        "dest": "/admin/$1",
+        "headers": {
+          "host": "admin-yourproject.vercel.app"
+        }
+      }
+    ]
+  }
+  

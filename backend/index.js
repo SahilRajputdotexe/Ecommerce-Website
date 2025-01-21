@@ -10,6 +10,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { hash } = require('crypto');
 const { type } = require('os');
+const dotenv = require('dotenv');
 
 
 app.use(express.json());
@@ -33,7 +34,7 @@ const upload = multer({storage:storage});
 //Schema Product
 const product= mongoose.model('product',{
     id:{
-        type:Number,
+        type:Number,    
         required:true
     },
     name:{
@@ -93,7 +94,14 @@ const users= mongoose.model('users',{
     }
 })
 //TODO :implement token schema and setup expiry and revoke and token types access_token and refresh_token
-const tokens = moonngoose.model('tokens',{
+
+const TokenType=Object.freeze({
+    ACCESS,
+    REFRESH,
+    FORGOT_PASSWORD
+}) 
+
+const tokens = mongoose.model('tokens',{
     token:{
         type:String,
         required:true
@@ -111,7 +119,7 @@ const tokens = moonngoose.model('tokens',{
         required:true
     },
     type:{
-        type:String,
+        type:TokenType,
         required:true
     }
 })
@@ -210,15 +218,8 @@ app.post('/register', async (req, res) => {
 
     await users.create(newUser);
 
-    const data={
-        user:{
-            id:newUser.id,
-            email:newUser.email,
-            name:newUser.name
-        }
-    }
 
-    const token=jwt.sign(data,'secret_ecom');
+    const token=generateAccessToken(user);
     res.json({success:1, token:token});
 
 });
@@ -292,12 +293,37 @@ app.post('/removefromcart', fetchUser,async (req, res) => {
 
 //token logic
 
+function generateToken(user,type,expiry ){
+
+ 
+    const data={
+        user:{
+            id:user.id,
+            email:user.email,
+            name:user.name
+        },
+        expiry:expiry,
+    }
+   
+    const token = jwt.sign(data,'secret_ecom',expiry)
+    const newToken = new tokens ({
+        token:token,
+        expiry:expiry,
+        isExpired:false,
+        isRevoked:false,
+        type:type
+    })
+    tokens.create(newToken);
+
+    return token;
+}
+
 function generateAccessToken(user){
-    //TODO: implement token logic
+    generateToken(user,TokenType.ACCESS,process.env.ACCESS_TOKEN_EXPIRY);
 }
 
 function generateRefreshToken(user){
-    //TODO: implement token logic
+    generateToken(user,TokenType.REFRESH,process.env.REFRESH_TOKEN_EXPIRY);
 }
 
 function isExpired(token){

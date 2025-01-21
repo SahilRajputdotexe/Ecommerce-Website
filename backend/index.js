@@ -334,3 +334,4 @@ function isRevoked(token){
     return token.isRevoked;
 }
 
+module.exports = app;   

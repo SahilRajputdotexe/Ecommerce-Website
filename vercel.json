@@ -4,12 +4,9 @@
       {
         "src": "frontend/package.json",
         "use": "@vercel/static-build"
-      },
-      
-      {
-        "src": "backend/server.js",
-        "use": "@vercel/node"
       }
+      
+      
     ],
     "routes": [
       {

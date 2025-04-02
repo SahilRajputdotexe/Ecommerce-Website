@@ -9,6 +9,8 @@ const fs = require('fs');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { hash } = require('crypto');
+const { type } = require('os');
+const dotenv = require('dotenv');
 
 
 app.use(express.json());
@@ -32,7 +34,7 @@ const upload = multer({storage:storage});
 //Schema Product
 const product= mongoose.model('product',{
     id:{
-        type:Number,
+        type:Number,    
         required:true
     },
     name:{
@@ -89,6 +91,36 @@ const users= mongoose.model('users',{
     date:{
         type:Date,
         default:Date.now
+    }
+})
+//TODO :implement token schema and setup expiry and revoke and token types access_token and refresh_token
+
+const TokenType=Object.freeze({
+    ACCESS,
+    REFRESH,
+    FORGOT_PASSWORD
+}) 
+
+const tokens = mongoose.model('tokens',{
+    token:{
+        type:String,
+        required:true
+    },
+    expiry:{
+        type:Date,
+        required:true
+    },
+    isExpired:{
+        type:Boolean,
+        required:true
+    },
+    isRevoked:{
+        type:Boolean,
+        required:true
+    },
+    type:{
+        type:TokenType,
+        required:true
     }
 })
 
@@ -163,6 +195,8 @@ app.get('/popular/:category/:n',async (req,res)=>{
     res.json({success:1, products:products});
 });
 
+
+
 //API for user authentication
 
 app.post('/register', async (req, res) => {
@@ -172,7 +206,7 @@ app.post('/register', async (req, res) => {
         return res.status(400).json({success:0, message:"User already exists"});
     }
     cart={};
-    for (let i=1; i<=10; i++){
+    for (let i=1; i<=300; i++){
         cart[i]=0;
     }
     const newUser = new users({
@@ -184,15 +218,8 @@ app.post('/register', async (req, res) => {
 
     await users.create(newUser);
 
-    const data={
-        user:{
-            id:newUser.id,
-            email:newUser.email,
-            name:newUser.name
-        }
-    }
 
-    const token=jwt.sign(data,'secret_ecom');
+    const token=generateAccessToken(user);
     res.json({success:1, token:token});
 
 });
@@ -222,3 +249,89 @@ app.post('/login', async (req, res) => {
 
 });
 
+//fetch user
+    const fetchUser = async (req, res,next) => {
+        const token=req.header('auth-token');
+        if(!token){
+            return res.status(401).json({success:0, message:"Access Denied"});
+        }
+        else{
+            try {
+                const data=jwt.verify(token,'secret_ecom');
+                req.user = data.user;
+                console.log(req.user);
+                next();
+            } catch (error) {
+                console.log(error);
+                res.status(401).json({success:0, message:"Invalid Token"});
+            }
+        
+        }
+    }
+//cart data 
+
+app.get('/getcartdata',fetchUser,async (req, res) => {
+    let user= await users.findOne({_id:req.user.id});
+    
+    res.json({success:1, cart_data:user.cart_data});
+});
+
+app.post('/addtocart', fetchUser,async (req, res) => {  
+    console.log(req.user)
+    let user= await users.findOne({_id:req.user.id});
+    user.cart_data[req.body.Itemid]+=1;
+    await users.findOneAndUpdate({_id:req.user.id},{cart_data:user.cart_data});
+    res.json({success:1, message:"Cart updated successfully"});
+});
+
+app.post('/removefromcart', fetchUser,async (req, res) => {
+    let user= await users.findOne({_id:req.user.id});
+    user.cart_data[req.body.Itemid]-=1;
+    await users.findOneAndUpdate({_id:req.user.id},{cart_data:user.cart_data});
+    res.json({success:1, message:"Cart updated successfully"});
+});
+
+//token logic
+
+function generateToken(user,type,expiry ){
+
+ 
+    const data={
+        user:{
+            id:user.id,
+            email:user.email,
+            name:user.name
+        },
+        expiry:expiry,
+    }
+   
+    const token = jwt.sign(data,'secret_ecom',expiry)
+    const newToken = new tokens ({
+        token:token,
+        expiry:expiry,
+        isExpired:false,
+        isRevoked:false,
+        type:type
+    })
+    tokens.create(newToken);
+
+    return token;
+}
+
+function generateAccessToken(user){
+    generateToken(user,TokenType.ACCESS,process.env.ACCESS_TOKEN_EXPIRY);
+}
+
+function generateRefreshToken(user){
+    generateToken(user,TokenType.REFRESH,process.env.REFRESH_TOKEN_EXPIRY);
+}
+
+function isExpired(token){
+    return token.expiry < Date.now();
+}
+
+function isRevoked(token){
+    return token.isRevoked;
+}
+
+module.exports = app;   

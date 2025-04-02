@@ -32,9 +32,9 @@ const Navbar = () => {
             </ul>
         <div className='nav-login-cart'>
 
-            {localStorage.getItem('auth-token')
+            {sessionStorage.getItem('auth-token')
             ?<Link style ={{textDecoration: 'none'}}onClick={()=>{
-                localStorage.removeItem('auth-token');
+                sessionStorage.removeItem('auth-token');
                 window.location.replace('/');
             }}><button>Logout</button></Link>
             :<Link style ={{textDecoration: 'none'}}to ='/login'><button>Login</button></Link>

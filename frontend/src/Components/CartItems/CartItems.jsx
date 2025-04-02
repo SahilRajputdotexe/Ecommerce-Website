@@ -4,7 +4,12 @@ import { ShopContext } from '../../Context/ShopContext'
 import remove_icon from '../Assets/cart_cross_icon.png'
 
 const CartItems = () => {
-    const {all_product,cartItems,removeFromCart,getTotalCartAmount}= useContext(ShopContext);
+  const {all_product,cartItems,removeFromCart,getTotalCartAmount}= useContext(ShopContext);
+   if (!all_product || all_product.length === 0) {
+    console.log();
+        // Show a loading message or some fallback content until products are loaded
+        return <div>Loading products...</div>;
+    }
   return (
     <div className='cartitems'>
       <div className="cartitems-format-main">
